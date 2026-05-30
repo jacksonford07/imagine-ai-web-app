@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
+import { Search } from "@/components/search";
 import { ThemeSwitch } from "@/components/theme-switch";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { topNav } from "@/components/layout/sidebar-data";
@@ -33,6 +34,7 @@ export function Header(): React.ReactElement {
         <SidebarTrigger variant="outline" className="max-md:scale-125" />
         <Separator orientation="vertical" className="h-6" />
         <TopNav links={topNav} className="me-auto" />
+        <Search />
         <ThemeSwitch />
         <ProfileDropdown />
       </div>
