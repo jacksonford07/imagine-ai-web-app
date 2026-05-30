@@ -13,7 +13,14 @@ export function isAllowedEmail(email: string, allowlist: string): boolean {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google],
+  trustHost: true,
+  secret: process.env.NEXTAUTH_SECRET,
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+  ],
   pages: { signIn: "/signin" },
   callbacks: {
     signIn({ user }) {
