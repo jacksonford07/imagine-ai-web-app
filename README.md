@@ -10,12 +10,12 @@ Next.js (App Router) · TypeScript · Tailwind + shadcn/ui (Radix, Lucide) · Ne
 ## Local dev
 ```bash
 pnpm install
-cp .env.example .env.local   # fill in the values
+cp env.example .env.local   # fill in the values
 pnpm dev
 ```
 
 ## Environment
-See `.env.example`. `BOT_INTERNAL_SECRET` must match the bot's `INTERNAL_CRON_SECRET`;
+See `env.example`. `BOT_INTERNAL_SECRET` must match the bot's `INTERNAL_CRON_SECRET`;
 `BOT_API_URL` is the bot's public Render URL.
 
 ## Architecture
@@ -40,6 +40,6 @@ Foundation slice: scaffold, auth, source adapter, and the Overview page are live
 Chats / escalations / health pages are stubbed next.
 
 ## Deploy
-Vercel. Set all env vars from `.env.example`, and add
+Vercel. Set all env vars from `env.example`, and add
 `<deployed-origin>/api/auth/callback/google` as an authorized redirect URI in Google OAuth.
 ```
