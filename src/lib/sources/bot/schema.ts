@@ -70,9 +70,7 @@ export const escalationRowSchema = z.object({
   triggerDetail: z.string().nullable(),
   status: z.enum(["open", "acknowledged", "resolved"]),
   createdAt: z.string(),
-  acknowledgedAt: z.string().nullable(),
   resolvedAt: z.string().nullable(),
-  timeToAckSeconds: z.number().nullable(),
   timeToResolveSeconds: z.number().nullable(),
 });
 export type EscalationRow = z.infer<typeof escalationRowSchema>;
