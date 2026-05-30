@@ -70,7 +70,6 @@ export default async function EscalationsPage({
               <TableHead>Trigger</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead className="text-right">Time to ack</TableHead>
               <TableHead className="text-right">Time to resolve</TableHead>
             </TableRow>
           </TableHeader>
@@ -96,9 +95,6 @@ export default async function EscalationsPage({
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {formatDateTime(e.createdAt)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">
-                  {formatDuration(e.timeToAckSeconds)}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
                   {formatDuration(e.timeToResolveSeconds)}
