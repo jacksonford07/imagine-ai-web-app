@@ -78,7 +78,6 @@ export interface DateWindow {
 export interface ChatFilters extends DateWindow {
   student?: string;
   coach?: string;
-  cohort?: string;
   status?: "open" | "acknowledged" | "resolved";
   limit?: number;
   cursor?: string;
