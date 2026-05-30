@@ -1,106 +1,136 @@
 import {
-  Users,
-  UserMinus,
-  TriangleAlert as TriangleAlertIcon,
+  Download,
   MessageSquare,
+  TriangleAlert,
+  UserMinus,
+  Users,
 } from "lucide-react";
 import { getOverview } from "@/lib/sources/bot/client";
-import { StatCard } from "@/components/widgets/stat-card";
-import { SourceError } from "@/components/widgets/source-error";
-import { PageHeader } from "@/components/widgets/page-header";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { OverviewChart } from "@/components/dashboard/overview-chart";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { Analytics } from "@/components/dashboard/analytics";
+import type { LucideIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function OverviewPage(): Promise<React.ReactElement> {
-  const { data, error, fetchedAt } = await getOverview();
-
+function MetricCard({
+  title,
+  value,
+  hint,
+  icon: Icon,
+}: {
+  title: string;
+  value: string | number;
+  hint: string;
+  icon: LucideIcon;
+}): React.ReactElement {
   return (
-    <div>
-      <PageHeader
-        title="Overview"
-        description="Activity and health across the bot, last 30 days."
-        fetchedAt={fetchedAt}
-      />
-
-      {error !== null || data === null ? (
-        <SourceError
-          message={error ?? "no data returned"}
-          fetchedAt={fetchedAt}
-        />
-      ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard
-              label="Active students"
-              value={data.activeStudents}
-              hint="messaged in last 7d"
-              icon={Users}
-            />
-            <StatCard
-              label="Quiet students"
-              value={data.quietStudents}
-              hint="silent 7d+"
-              icon={UserMinus}
-            />
-            <StatCard
-              label="Open escalations"
-              value={data.openEscalations}
-              icon={TriangleAlertIcon}
-            />
-            <StatCard
-              label="Messages today"
-              value={data.messagesToday}
-              icon={MessageSquare}
-            />
-            <StatCard
-              label="Messages 7d"
-              value={data.messages7d}
-              icon={MessageSquare}
-            />
-            <StatCard
-              label="Messages 30d"
-              value={data.messages30d}
-              icon={MessageSquare}
-            />
-          </div>
-
-          <Card className="p-5">
-            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              System health
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <HealthBadge
-                label="Queue backlog"
-                count={data.health.queueBacklog}
-              />
-              <HealthBadge
-                label="Failed webhooks"
-                count={data.health.failedWebhooks}
-              />
-              <HealthBadge
-                label="Failed follow-ups"
-                count={data.health.failedFollowUps}
-              />
-            </div>
-          </Card>
-        </div>
-      )}
-    </div>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold tabular-nums">{value}</div>
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      </CardContent>
+    </Card>
   );
 }
 
-function HealthBadge({
-  label,
-  count,
-}: {
-  label: string;
-  count: number;
-}): React.ReactElement {
+export default async function OverviewPage(): Promise<React.ReactElement> {
+  const { data } = await getOverview();
+  const dash = (n: number | undefined): string =>
+    n === undefined ? "—" : String(n);
+
   return (
-    <Badge variant={count > 0 ? "warning" : "success"}>
-      {label}: {count}
-    </Badge>
+    <div className="space-y-4">
+      <div className="mb-2 flex items-center justify-between space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <div className="flex items-center space-x-2">
+          <Button>
+            <Download className="h-4 w-4" />
+            Download
+          </Button>
+        </div>
+      </div>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <div className="w-full overflow-x-auto pb-2">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="reports" disabled>
+              Reports
+            </TabsTrigger>
+            <TabsTrigger value="notifications" disabled>
+              Notifications
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <MetricCard
+              title="Active students"
+              value={dash(data?.activeStudents)}
+              hint="messaged in last 7d"
+              icon={Users}
+            />
+            <MetricCard
+              title="Open escalations"
+              value={dash(data?.openEscalations)}
+              hint="needs attention"
+              icon={TriangleAlert}
+            />
+            <MetricCard
+              title="Messages (7d)"
+              value={dash(data?.messages7d)}
+              hint="across all channels"
+              icon={MessageSquare}
+            />
+            <MetricCard
+              title="Quiet students"
+              value={dash(data?.quietStudents)}
+              hint="silent 7d+"
+              icon={UserMinus}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+            <Card className="col-span-1 lg:col-span-4">
+              <CardHeader>
+                <CardTitle>Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="ps-2">
+                <OverviewChart />
+              </CardContent>
+            </Card>
+            <Card className="col-span-1 lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Recent activity</CardTitle>
+                <CardDescription>Latest student touchpoints.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecentActivity />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <Analytics />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
