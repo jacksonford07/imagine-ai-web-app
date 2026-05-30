@@ -1,3 +1,21 @@
+const USD = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+/** Cents → "$1,234". Renders "—" for null/NaN so unwired metrics stay honest. */
+export function formatCents(cents: number | null): string {
+  if (cents === null || Number.isNaN(cents)) return "—";
+  return USD.format(cents / 100);
+}
+
+/** 0–1 fraction → "12.3%". Renders "—" for null. */
+export function formatPercent(fraction: number | null): string {
+  if (fraction === null || Number.isNaN(fraction)) return "—";
+  return `${(fraction * 100).toFixed(1)}%`;
+}
+
 export function formatDateTime(iso: string | null): string {
   if (iso === null) return "—";
   const d = new Date(iso);
