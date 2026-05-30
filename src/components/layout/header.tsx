@@ -7,6 +7,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { TopNav } from "@/components/layout/top-nav";
 import { Search } from "@/components/search";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { ConfigDrawer } from "@/components/config-drawer";
 import { ProfileDropdown } from "@/components/profile-dropdown";
 import { topNav } from "@/components/layout/sidebar-data";
 
@@ -36,6 +37,7 @@ export function Header(): React.ReactElement {
         <TopNav links={topNav} className="me-auto" />
         <Search />
         <ThemeSwitch />
+        <ConfigDrawer />
         <ProfileDropdown />
       </div>
     </header>

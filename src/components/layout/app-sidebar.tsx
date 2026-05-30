@@ -7,14 +7,16 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { useLayout } from "@/context/layout-provider";
 import { NavGroup } from "./nav-group";
 import { NavUser } from "./nav-user";
 import { TeamSwitcher } from "./team-switcher";
 import { sidebarData } from "./sidebar-data";
 
 export function AppSidebar(): React.ReactElement {
+  const { collapsible, variant } = useLayout();
   return (
-    <Sidebar collapsible="icon" variant="inset">
+    <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
         <TeamSwitcher teams={sidebarData.teams} />
       </SidebarHeader>
