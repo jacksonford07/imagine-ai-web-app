@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Info, DollarSign, Wallet, Megaphone, Percent } from "lucide-react";
 import { getCeoOverview } from "@/lib/sources/bot/ceo";
 import type { TierStat } from "@/lib/sources/bot/ceo";
 import { PageHeader } from "@/components/widgets/page-header";
@@ -9,7 +9,8 @@ import {
   type TierMetric,
 } from "@/components/ceo/ascension-ladder";
 import { NetRevenueCard } from "@/components/ceo/net-revenue-card";
-import { getTier } from "@/lib/ceo/taxonomy";
+import { TierRevenueChart } from "@/components/ceo/tier-revenue-chart";
+import { TIERS, getTier } from "@/lib/ceo/taxonomy";
 import type { TierKey } from "@/lib/ceo/taxonomy";
 import { formatCents, formatPercent } from "@/lib/format";
 
@@ -33,6 +34,11 @@ export default async function CeoOverviewPage(): Promise<React.ReactElement> {
         totals.grossCents
       : null;
   const other = getTier("OTHER");
+  const chartData = TIERS.map((t) => ({
+    label: t.short,
+    netCents: metrics?.[t.key]?.netCents ?? 0,
+    chart: t.chart,
+  }));
 
   return (
     <div className="space-y-6">
@@ -59,20 +65,24 @@ export default async function CeoOverviewPage(): Promise<React.ReactElement> {
         <StatCard
           label="Gross sales"
           value={formatCents(totals?.grossCents ?? null)}
+          icon={DollarSign}
         />
         <StatCard
           label="Net revenue"
           value={formatCents(totals?.netCents ?? null)}
           hint="after all fees"
+          icon={Wallet}
         />
         <StatCard
           label="Ad spend"
           value={formatCents(totals?.adSpendCents ?? null)}
+          icon={Megaphone}
         />
         <StatCard
           label="Fee rate"
           value={formatPercent(feeRate)}
           hint="of gross"
+          icon={Percent}
         />
       </div>
 
@@ -90,6 +100,10 @@ export default async function CeoOverviewPage(): Promise<React.ReactElement> {
           financingFeeCents={totals?.financingFeeCents ?? null}
           netCents={totals?.netCents ?? null}
         />
+        <TierRevenueChart data={chartData} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-chart-3" />

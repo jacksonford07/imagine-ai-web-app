@@ -1,3 +1,9 @@
+import {
+  Users,
+  UserMinus,
+  TriangleAlert as TriangleAlertIcon,
+  MessageSquare,
+} from "lucide-react";
 import { getOverview } from "@/lib/sources/bot/client";
 import { StatCard } from "@/components/widgets/stat-card";
 import { SourceError } from "@/components/widgets/source-error";
@@ -30,16 +36,34 @@ export default async function OverviewPage(): Promise<React.ReactElement> {
               label="Active students"
               value={data.activeStudents}
               hint="messaged in last 7d"
+              icon={Users}
             />
             <StatCard
               label="Quiet students"
               value={data.quietStudents}
               hint="silent 7d+"
+              icon={UserMinus}
             />
-            <StatCard label="Open escalations" value={data.openEscalations} />
-            <StatCard label="Messages today" value={data.messagesToday} />
-            <StatCard label="Messages 7d" value={data.messages7d} />
-            <StatCard label="Messages 30d" value={data.messages30d} />
+            <StatCard
+              label="Open escalations"
+              value={data.openEscalations}
+              icon={TriangleAlertIcon}
+            />
+            <StatCard
+              label="Messages today"
+              value={data.messagesToday}
+              icon={MessageSquare}
+            />
+            <StatCard
+              label="Messages 7d"
+              value={data.messages7d}
+              icon={MessageSquare}
+            />
+            <StatCard
+              label="Messages 30d"
+              value={data.messages30d}
+              icon={MessageSquare}
+            />
           </div>
 
           <Card className="p-5">
