@@ -5,16 +5,9 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 
-export interface FilterBarProps {
-  // Which controls to show. Chats has cohort; escalations does not.
-  showCohort?: boolean;
-}
-
 // Client filter bar: every change writes to the URL query string, which the
 // server component reads to re-fetch. Pagination cursor is reset on any change.
-export function FilterBar({
-  showCohort = false,
-}: FilterBarProps): React.ReactElement {
+export function FilterBar(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -76,26 +69,6 @@ export function FilterBar({
           }}
         />
       </div>
-
-      {showCohort && (
-        <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-muted-foreground">
-            Cohort
-          </label>
-          <Input
-            className="w-28"
-            placeholder="cohort"
-            defaultValue={searchParams.get("cohort") ?? ""}
-            onBlur={(e) => {
-              setParam("cohort", e.target.value.trim());
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter")
-                setParam("cohort", e.currentTarget.value.trim());
-            }}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-muted-foreground">

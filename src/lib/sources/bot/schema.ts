@@ -22,7 +22,6 @@ export const chatThreadSchema = z.object({
   studentExternalId: z.string(),
   studentName: z.string().nullable(),
   coach: z.string().nullable(),
-  cohort: z.string().nullable(),
   lastMessageAt: z.string(),
   lastDirection: z.enum(["in", "out"]),
   inCount: z.number(),

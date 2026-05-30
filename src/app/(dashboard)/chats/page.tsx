@@ -28,7 +28,6 @@ export default async function ChatsPage({
   const { data, error, fetchedAt } = await listChats({
     student: single(sp.student),
     coach: single(sp.coach),
-    cohort: single(sp.cohort),
     status: asStatus(sp.status),
     from: single(sp.from),
     to: single(sp.to),
@@ -36,14 +35,7 @@ export default async function ChatsPage({
   });
 
   const baseParams = new URLSearchParams();
-  for (const key of [
-    "student",
-    "coach",
-    "cohort",
-    "status",
-    "from",
-    "to",
-  ] as const) {
+  for (const key of ["student", "coach", "status", "from", "to"] as const) {
     const v = single(sp[key]);
     if (v !== undefined && v !== "") baseParams.set(key, v);
   }
@@ -59,7 +51,7 @@ export default async function ChatsPage({
         description="Student conversations. Filter, then open a thread."
         fetchedAt={fetchedAt}
       />
-      <FilterBar showCohort />
+      <FilterBar />
 
       {error !== null || data === null ? (
         <SourceError
@@ -77,7 +69,6 @@ export default async function ChatsPage({
               <TableRow>
                 <TableHead>Student</TableHead>
                 <TableHead>Coach</TableHead>
-                <TableHead>Cohort</TableHead>
                 <TableHead>Last activity</TableHead>
                 <TableHead className="text-right">In / Out</TableHead>
                 <TableHead>Status</TableHead>
@@ -96,9 +87,6 @@ export default async function ChatsPage({
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {t.coach ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {t.cohort ?? "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {formatRelative(t.lastMessageAt)}{" "}
