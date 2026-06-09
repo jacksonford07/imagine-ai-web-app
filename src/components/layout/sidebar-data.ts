@@ -14,11 +14,14 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { isEditor } from "@/lib/auth/role";
 import type { RoleInfo } from "@/lib/auth/role";
 
-// "any": every signed-in role. "fulfillment": admin or the per-user
-// fulfillment-access flag. "admin": admins only (US-026 user management).
-export type NavAccess = "any" | "fulfillment" | "admin";
+// "any": every signed-in role. "editor": admin or editor (viewers denied —
+// matches the /settings/* middleware gate). "fulfillment": admin or the
+// per-user fulfillment-access flag. "admin": admins only (US-026 user
+// management).
+export type NavAccess = "any" | "editor" | "fulfillment" | "admin";
 
 export interface NavItem {
   title: string;
@@ -93,7 +96,7 @@ export const sidebarData: SidebarData = {
     },
     {
       title: "Settings",
-      access: "any",
+      access: "editor",
       items: [
         { title: "Users & Roles", url: "/settings/users", icon: Users },
         { title: "Integrations", url: "/settings/integrations", icon: Plug },
@@ -104,8 +107,7 @@ export const sidebarData: SidebarData = {
   ],
 };
 
-// /settings/users is admin-only within an otherwise role-agnostic group
-// (US-033 settings pages are read-only for non-admins, but still visible).
+// /settings/users is admin-only within the editor-visible Settings group.
 const ADMIN_ONLY_URLS = new Set(["/settings/users"]);
 
 export function filterNavGroups(
@@ -116,6 +118,7 @@ export function filterNavGroups(
   return groups
     .filter((group) => {
       if (group.access === "admin") return isAdmin;
+      if (group.access === "editor") return isEditor(role);
       if (group.access === "fulfillment") return isAdmin || fulfillmentAccess;
       return true;
     })
