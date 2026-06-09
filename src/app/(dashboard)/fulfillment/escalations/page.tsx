@@ -1,5 +1,7 @@
 import { listEscalations } from "@/lib/sources/bot/client";
 import { PageHeader } from "@/components/widgets/page-header";
+import { LastSynced } from "@/components/widgets/last-synced";
+import { RefreshNow } from "@/components/widgets/refresh-now";
 import { SourceError } from "@/components/widgets/source-error";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
@@ -48,7 +50,12 @@ export default async function EscalationsPage({
       <PageHeader
         title="Escalations"
         description="Triggered escalations with acknowledge and resolve timings."
-        fetchedAt={fetchedAt}
+        actions={
+          <>
+            <LastSynced at={data !== null ? fetchedAt : null} />
+            <RefreshNow />
+          </>
+        }
       />
       <FilterBar />
 

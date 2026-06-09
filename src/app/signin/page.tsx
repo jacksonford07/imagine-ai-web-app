@@ -61,7 +61,7 @@ export default function SignInPage(): React.ReactElement {
           <form
             action={async () => {
               "use server";
-              await signIn("google", { redirectTo: "/overview" });
+              await signIn("google", { redirectTo: "/ceo" });
             }}
           >
             <Button type="submit" variant="outline" className="w-full">

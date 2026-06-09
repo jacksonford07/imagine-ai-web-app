@@ -2,6 +2,9 @@ import { Info, DollarSign, Wallet, Megaphone, Percent } from "lucide-react";
 import { getCeoOverview } from "@/lib/sources/bot/ceo";
 import type { TierStat } from "@/lib/sources/bot/ceo";
 import { PageHeader } from "@/components/widgets/page-header";
+import { WindowFilter } from "@/components/widgets/window-filter";
+import { LastSynced } from "@/components/widgets/last-synced";
+import { RefreshNow } from "@/components/widgets/refresh-now";
 import { StatCard } from "@/components/widgets/stat-card";
 import { Card } from "@/components/ui/card";
 import {
@@ -13,6 +16,7 @@ import { TierRevenueChart } from "@/components/ceo/tier-revenue-chart";
 import { TIERS, getTier } from "@/lib/ceo/taxonomy";
 import type { TierKey } from "@/lib/ceo/taxonomy";
 import { formatCents, formatPercent } from "@/lib/format";
+import { single, type RawSearchParams } from "@/lib/search-params";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +28,16 @@ function toMetricMap(tiers: TierStat[]): Partial<Record<TierKey, TierMetric>> {
   return map;
 }
 
-export default async function CeoOverviewPage(): Promise<React.ReactElement> {
-  const { data, error, fetchedAt } = await getCeoOverview();
+export default async function CeoOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>;
+}): Promise<React.ReactElement> {
+  const sp = await searchParams;
+  const { data, error, fetchedAt } = await getCeoOverview({
+    from: single(sp.from),
+    to: single(sp.to),
+  });
   const totals = data?.totals ?? null;
   const metrics = data === null ? undefined : toMetricMap(data.tiers);
   const feeRate =
@@ -45,7 +57,13 @@ export default async function CeoOverviewPage(): Promise<React.ReactElement> {
       <PageHeader
         title="CEO Dashboard"
         description="Cohort ascension and net revenue across the LTO → MTO → HTO → PTO ladder."
-        fetchedAt={fetchedAt}
+        actions={
+          <>
+            <WindowFilter />
+            <LastSynced at={data !== null ? fetchedAt : null} />
+            <RefreshNow tick="all" />
+          </>
+        }
       />
 
       {error !== null && (

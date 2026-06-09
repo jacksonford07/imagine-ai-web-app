@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listChats } from "@/lib/sources/bot/client";
 import { PageHeader } from "@/components/widgets/page-header";
+import { LastSynced } from "@/components/widgets/last-synced";
+import { RefreshNow } from "@/components/widgets/refresh-now";
 import { SourceError } from "@/components/widgets/source-error";
 import { FilterBar } from "@/components/filters/filter-bar";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +43,7 @@ export default async function ChatsPage({
   }
   const nextHref =
     data?.nextCursor != null
-      ? `/chats?${new URLSearchParams({ ...Object.fromEntries(baseParams), cursor: data.nextCursor }).toString()}`
+      ? `/fulfillment/chats?${new URLSearchParams({ ...Object.fromEntries(baseParams), cursor: data.nextCursor }).toString()}`
       : null;
 
   return (
@@ -49,7 +51,12 @@ export default async function ChatsPage({
       <PageHeader
         title="Chats"
         description="Student conversations. Filter, then open a thread."
-        fetchedAt={fetchedAt}
+        actions={
+          <>
+            <LastSynced at={data !== null ? fetchedAt : null} />
+            <RefreshNow />
+          </>
+        }
       />
       <FilterBar />
 
@@ -79,7 +86,7 @@ export default async function ChatsPage({
                 <TableRow key={t.studentExternalId}>
                   <TableCell>
                     <Link
-                      href={`/chats/${encodeURIComponent(t.studentExternalId)}`}
+                      href={`/fulfillment/chats/${encodeURIComponent(t.studentExternalId)}`}
                       className="font-medium text-foreground hover:underline"
                     >
                       {t.studentName ?? t.studentExternalId}

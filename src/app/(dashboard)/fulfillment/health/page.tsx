@@ -1,5 +1,7 @@
 import { getHealth } from "@/lib/sources/bot/client";
 import { PageHeader } from "@/components/widgets/page-header";
+import { LastSynced } from "@/components/widgets/last-synced";
+import { RefreshNow } from "@/components/widgets/refresh-now";
 import { SourceError } from "@/components/widgets/source-error";
 import { StatCard } from "@/components/widgets/stat-card";
 import { Card } from "@/components/ui/card";
@@ -15,7 +17,12 @@ export default async function HealthPage(): Promise<React.ReactElement> {
       <PageHeader
         title="Health"
         description="Queue, webhook, follow-up and theme health (DB-derived)."
-        fetchedAt={fetchedAt}
+        actions={
+          <>
+            <LastSynced at={data !== null ? fetchedAt : null} />
+            <RefreshNow />
+          </>
+        }
       />
 
       {error !== null || data === null ? (

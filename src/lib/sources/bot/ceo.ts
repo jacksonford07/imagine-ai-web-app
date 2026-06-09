@@ -49,6 +49,19 @@ export const ceoCohortsSchema = z.object({
 export type CeoCohorts = z.infer<typeof ceoCohortsSchema>;
 export type CohortRow = z.infer<typeof cohortRowSchema>;
 
+const reviewQueueCountSchema = z.object({ count: z.number() }).passthrough();
+
+export type ReviewQueueCount = z.infer<typeof reviewQueueCountSchema>;
+
+/** Sidebar badge for /ceo/review-queue. Resolves to an error (and no badge)
+ * until the bot ships the endpoint. */
+export function getReviewQueueCount(): Promise<SourceResult<ReviewQueueCount>> {
+  return fetchSource(
+    "/internal/admin/ceo/review-queue/count",
+    reviewQueueCountSchema,
+  );
+}
+
 export function getCeoOverview(
   window: DateWindow = {},
 ): Promise<SourceResult<CeoOverview>> {

@@ -14,12 +14,15 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { useSearch } from "@/context/search-provider";
-import { sidebarData } from "@/components/layout/sidebar-data";
+import { useRole } from "@/context/role-provider";
+import { sidebarData, filterNavGroups } from "@/components/layout/sidebar-data";
 
 export function CommandMenu(): React.ReactElement {
   const router = useRouter();
   const { open, setOpen } = useSearch();
   const { setTheme } = useTheme();
+  const roleInfo = useRole();
+  const groups = filterNavGroups(sidebarData.navGroups, roleInfo);
 
   const run = React.useCallback(
     (fn: () => void) => {
@@ -31,22 +34,20 @@ export function CommandMenu(): React.ReactElement {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder="Go to page or run a command..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        {sidebarData.navGroups.map((group) => (
+        {groups.map((group) => (
           <CommandGroup key={group.title} heading={group.title}>
             {group.items.map((item) => {
-              if (item.url === undefined) return null;
               const Icon = item.icon;
-              const url = item.url;
               return (
                 <CommandItem
-                  key={url}
+                  key={item.url}
                   value={`${group.title} ${item.title}`}
                   onSelect={() => {
                     run(() => {
-                      router.push(url);
+                      router.push(item.url);
                     });
                   }}
                 >

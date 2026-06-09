@@ -1,24 +1,38 @@
 import {
   Activity,
+  ArrowLeftRight,
+  Bell,
   Command,
-  Crown,
-  Layers,
+  FileText,
+  Inbox,
   LayoutDashboard,
+  Layers,
   MessagesSquare,
+  Percent,
+  Plug,
   TriangleAlert,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { RoleInfo } from "@/lib/auth/role";
+
+// "any": every signed-in role. "fulfillment": admin or the per-user
+// fulfillment-access flag. "admin": admins only (US-026 user management).
+export type NavAccess = "any" | "fulfillment" | "admin";
 
 export interface NavItem {
   title: string;
-  url?: string;
+  url: string;
   icon?: LucideIcon;
-  badge?: string;
-  items?: { title: string; url: string; icon?: LucideIcon; badge?: string }[];
+  /** Section roots ("/ceo", "/fulfillment") match exactly, not by prefix. */
+  exact?: boolean;
+  /** Slot for a live count badge (e.g. review queue) injected by the shell. */
+  badgeKey?: "reviewQueue";
 }
 
 export interface NavGroupData {
   title: string;
+  access: NavAccess;
   items: NavItem[];
 }
 
@@ -26,11 +40,6 @@ export interface Team {
   name: string;
   logo: LucideIcon;
   plan: string;
-}
-
-export interface TopNavLink {
-  title: string;
-  href: string;
 }
 
 export interface SidebarData {
@@ -41,30 +50,80 @@ export interface SidebarData {
 
 export const sidebarData: SidebarData = {
   user: { name: "Imagine AI", email: "ops@imagine.education" },
-  teams: [{ name: "Imagine AI", logo: Command, plan: "Operations" }],
+  teams: [{ name: "Imagine Education", logo: Command, plan: "CEO Dashboard" }],
   navGroups: [
     {
-      title: "Fulfillment",
+      title: "CEO",
+      access: "any",
       items: [
-        { title: "Overview", url: "/overview", icon: LayoutDashboard },
-        { title: "Chats", url: "/chats", icon: MessagesSquare },
-        { title: "Escalations", url: "/escalations", icon: TriangleAlert },
-        { title: "Health", url: "/health", icon: Activity },
+        { title: "Overview", url: "/ceo", icon: LayoutDashboard, exact: true },
+        { title: "Cohorts", url: "/ceo/cohorts", icon: Layers },
+        {
+          title: "Transactions",
+          url: "/ceo/transactions",
+          icon: ArrowLeftRight,
+        },
+        {
+          title: "Review Queue",
+          url: "/ceo/review-queue",
+          icon: Inbox,
+          badgeKey: "reviewQueue",
+        },
+        { title: "Reports", url: "/ceo/reports", icon: FileText },
       ],
     },
     {
-      title: "Executive",
+      title: "Fulfillment",
+      access: "fulfillment",
       items: [
-        { title: "CEO Dashboard", url: "/ceo", icon: Crown },
-        { title: "Cohorts", url: "/ceo/cohorts", icon: Layers },
+        {
+          title: "Overview",
+          url: "/fulfillment",
+          icon: LayoutDashboard,
+          exact: true,
+        },
+        { title: "Chats", url: "/fulfillment/chats", icon: MessagesSquare },
+        {
+          title: "Escalations",
+          url: "/fulfillment/escalations",
+          icon: TriangleAlert,
+        },
+        { title: "Health", url: "/fulfillment/health", icon: Activity },
+      ],
+    },
+    {
+      title: "Settings",
+      access: "any",
+      items: [
+        { title: "Users & Roles", url: "/settings/users", icon: Users },
+        { title: "Integrations", url: "/settings/integrations", icon: Plug },
+        { title: "Alerts", url: "/settings/alerts", icon: Bell },
+        { title: "Commission", url: "/settings/commission", icon: Percent },
       ],
     },
   ],
 };
 
-export const topNav: TopNavLink[] = [
-  { title: "Overview", href: "/overview" },
-  { title: "Chats", href: "/chats" },
-  { title: "Escalations", href: "/escalations" },
-  { title: "CEO", href: "/ceo" },
-];
+// /settings/users is admin-only within an otherwise role-agnostic group
+// (US-033 settings pages are read-only for non-admins, but still visible).
+const ADMIN_ONLY_URLS = new Set(["/settings/users"]);
+
+export function filterNavGroups(
+  groups: NavGroupData[],
+  { role, fulfillmentAccess }: RoleInfo,
+): NavGroupData[] {
+  const isAdmin = role === "admin";
+  return groups
+    .filter((group) => {
+      if (group.access === "admin") return isAdmin;
+      if (group.access === "fulfillment") return isAdmin || fulfillmentAccess;
+      return true;
+    })
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => isAdmin || !ADMIN_ONLY_URLS.has(item.url),
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
+}

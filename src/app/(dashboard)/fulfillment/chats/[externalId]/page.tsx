@@ -32,7 +32,7 @@ export default async function ChatDetailPage({
   return (
     <div>
       <Link
-        href="/chats"
+        href="/fulfillment/chats"
         className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />

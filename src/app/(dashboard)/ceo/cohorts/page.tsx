@@ -2,6 +2,9 @@ import { Info } from "lucide-react";
 import { getCeoCohorts } from "@/lib/sources/bot/ceo";
 import type { CohortRow } from "@/lib/sources/bot/ceo";
 import { PageHeader } from "@/components/widgets/page-header";
+import { WindowFilter } from "@/components/widgets/window-filter";
+import { LastSynced } from "@/components/widgets/last-synced";
+import { RefreshNow } from "@/components/widgets/refresh-now";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -14,6 +17,7 @@ import {
 import { TIERS, getTier } from "@/lib/ceo/taxonomy";
 import type { TierKey } from "@/lib/ceo/taxonomy";
 import { formatCents, formatPercent } from "@/lib/format";
+import { single, type RawSearchParams } from "@/lib/search-params";
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +29,16 @@ const CHART_BG: Record<1 | 2 | 3 | 4 | 5, string> = {
   5: "bg-chart-5",
 };
 
-export default async function CohortsPage(): Promise<React.ReactElement> {
-  const { data, error, fetchedAt } = await getCeoCohorts();
+export default async function CohortsPage({
+  searchParams,
+}: {
+  searchParams: Promise<RawSearchParams>;
+}): Promise<React.ReactElement> {
+  const sp = await searchParams;
+  const { data, error, fetchedAt } = await getCeoCohorts({
+    from: single(sp.from),
+    to: single(sp.to),
+  });
   const rowsByKey = new Map<TierKey, CohortRow>(
     (data?.rows ?? []).map((r) => [r.key, r]),
   );
@@ -36,7 +48,13 @@ export default async function CohortsPage(): Promise<React.ReactElement> {
       <PageHeader
         title="Cohorts"
         description="Customers, revenue, and ascension rate per ladder tier."
-        fetchedAt={fetchedAt}
+        actions={
+          <>
+            <WindowFilter />
+            <LastSynced at={data !== null ? fetchedAt : null} />
+            <RefreshNow tick="all" />
+          </>
+        }
       />
 
       {error !== null && (
