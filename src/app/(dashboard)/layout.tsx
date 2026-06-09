@@ -7,7 +7,7 @@ import { LayoutProvider } from "@/context/layout-provider";
 import { RoleProvider } from "@/context/role-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { resolveRoleInfo } from "@/lib/auth/role";
-import { getReviewQueueCount } from "@/lib/sources/bot/ceo";
+import { getReviewQueueCount } from "@/lib/sources/bot/review-queue";
 import type { NavBadges } from "@/components/layout/nav-group";
 
 export default async function DashboardLayout({
