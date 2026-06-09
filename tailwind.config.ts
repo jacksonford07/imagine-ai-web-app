@@ -61,15 +61,64 @@ const config: Config = {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Prism tokens (Imagine navy brand, dark-first)
+        surface: {
+          0: "var(--surface-0)",
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
+          4: "var(--surface-4)",
+        },
+        fg: {
+          primary: "var(--fg-primary)",
+          secondary: "var(--fg-secondary)",
+          muted: "var(--fg-muted)",
+          subtle: "var(--fg-subtle)",
+        },
+        line: {
+          DEFAULT: "var(--line)",
+          soft: "var(--line-soft)",
+        },
+        fill: {
+          hover: "var(--fill-hover)",
+          active: "var(--fill-active)",
+        },
+        glass: {
+          DEFAULT: "var(--glass-bg)",
+          border: "var(--glass-border)",
+          "border-hover": "var(--glass-border-hover)",
+        },
+        scrim: {
+          DEFAULT: "var(--scrim)",
+          strong: "var(--scrim-strong)",
+        },
+        brand: {
+          DEFAULT: "hsl(var(--brand) / <alpha-value>)",
+          soft: "hsl(var(--brand-soft) / <alpha-value>)",
+          strong: "hsl(var(--brand-strong) / <alpha-value>)",
+        },
+        warning: "hsl(var(--warning) / <alpha-value>)",
+        success: "hsl(var(--success) / <alpha-value>)",
+        error: "hsl(var(--error) / <alpha-value>)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1rem",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
+        "4xl": "1.75rem",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        display: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
+      transitionDuration: {
+        confirm: "100ms",
+        spatial: "240ms",
+        sidebar: "500ms",
       },
       keyframes: {
         "accordion-down": {
