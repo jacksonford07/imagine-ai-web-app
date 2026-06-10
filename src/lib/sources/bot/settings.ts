@@ -62,19 +62,30 @@ const rawWatchlistItemSchema = z
     id: z.union([z.string(), z.number()]),
     title: z.string().nullish(),
     label: z.string().nullish(),
-    detail: z.string().nullish(),
+    /** Free text, or the bot's structured JSONB detail object. */
+    detail: z.unknown().optional(),
     reason: z.string().nullish(),
     status: z.unknown().optional(),
     kind: z.string().nullish(),
+    /** Bot reference like 'kpi:roas' or 'source:meta'. */
+    targetRef: z.string().nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish(),
   })
   .passthrough();
 
-const rawWatchlistSchema = z.union([
-  z.array(rawWatchlistItemSchema),
-  z.object({ rows: z.array(rawWatchlistItemSchema) }).passthrough(),
-]);
+// The bot wraps the list as { count, items }; bare arrays and { rows } are
+// kept for tolerance. Unwrapped before parsing so the schema output is
+// always the item array.
+const rawWatchlistSchema = z.preprocess((raw) => {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return raw;
+  }
+  const wrapper = raw as Record<string, unknown>;
+  if (Array.isArray(wrapper.items)) return wrapper.items;
+  if (Array.isArray(wrapper.rows)) return wrapper.rows;
+  return raw;
+}, z.array(rawWatchlistItemSchema));
 
 export interface WatchlistItem {
   id: string;
@@ -84,6 +95,18 @@ export interface WatchlistItem {
   kind: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+}
+
+// The bot's detail is a structured JSONB object (threshold, observed value…);
+// render it as compact text rather than dropping it.
+function detailText(detail: unknown): string | null {
+  if (typeof detail === "string") return detail;
+  if (detail === null || detail === undefined) return null;
+  try {
+    return JSON.stringify(detail);
+  } catch {
+    return null;
+  }
 }
 
 function toWatchlistItem(
@@ -96,8 +119,8 @@ function toWatchlistItem(
       : "open";
   return {
     id: String(raw.id),
-    title: raw.title ?? raw.label ?? `Item ${String(raw.id)}`,
-    detail: raw.detail ?? raw.reason ?? null,
+    title: raw.title ?? raw.label ?? raw.targetRef ?? `Item ${String(raw.id)}`,
+    detail: detailText(raw.detail) ?? raw.reason ?? null,
     status,
     kind: raw.kind ?? null,
     createdAt: raw.createdAt ?? null,
@@ -106,17 +129,18 @@ function toWatchlistItem(
 }
 
 export async function getWatchlist(): Promise<SourceResult<WatchlistItem[]>> {
+  // NOTE: the preprocess widens the schema's input type; the cast is
+  // type-level only (fetchSource assumes input and output types match).
   const result = await fetchSource(
     "/internal/admin/ceo/watchlist",
-    rawWatchlistSchema,
+    rawWatchlistSchema as unknown as z.ZodType<
+      z.infer<typeof rawWatchlistItemSchema>[]
+    >,
   );
-  const rows =
-    result.data === null
-      ? null
-      : Array.isArray(result.data)
-        ? result.data
-        : result.data.rows;
-  return { ...result, data: rows !== null ? rows.map(toWatchlistItem) : null };
+  return {
+    ...result,
+    data: result.data !== null ? result.data.map(toWatchlistItem) : null,
+  };
 }
 
 const rawCommissionConfigSchema = z

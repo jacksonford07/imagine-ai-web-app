@@ -3,11 +3,51 @@ import { z } from "zod";
 import type { SourceResult } from "../contract";
 import { fetchSource, type DateWindow } from "./client";
 
-// Cohorts & ascension domain adapter (US-028). Tolerant schemas: the bot
-// builds these endpoints concurrently, so every metric is nullish and rows
-// passthrough unknown fields — gaps render as "—" instead of failing the page.
+// Cohorts & ascension domain adapter (US-028). The bot wire format differs
+// from the display shape — it sends { cohorts: [...] } with cohortStart /
+// medianDaysToNextTier / paybackWeeks / matrix[{ weekOffset }] — so the
+// response is normalized before the tolerant schema parses it. Every metric
+// stays nullish and rows passthrough unknown fields, so gaps render as "—"
+// instead of failing the page.
 
 export type Granularity = "week" | "month";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeMatrixCell(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  return { ...raw, week: raw.week ?? raw.weekOffset };
+}
+
+function normalizeCohortRow(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  const paybackWeeks = raw.paybackWeeks;
+  return {
+    ...raw,
+    key: raw.key ?? raw.cohortStart,
+    startDate: raw.startDate ?? raw.cohortStart,
+    medianDaysToAscension:
+      raw.medianDaysToAscension ?? raw.medianDaysToNextTier,
+    paybackDays:
+      raw.paybackDays ??
+      (typeof paybackWeeks === "number" ? paybackWeeks * 7 : null),
+    matrix: Array.isArray(raw.matrix)
+      ? raw.matrix.map(normalizeMatrixCell)
+      : raw.matrix,
+  };
+}
+
+function normalizeCohortsResponse(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  const rows = Array.isArray(raw.rows)
+    ? raw.rows
+    : Array.isArray(raw.cohorts)
+      ? raw.cohorts
+      : [];
+  return { ...raw, rows: rows.map(normalizeCohortRow) };
+}
 
 const matrixCellSchema = z
   .object({
@@ -53,6 +93,13 @@ const cohortsResponseSchema = z
 
 export type CohortsResponse = z.infer<typeof cohortsResponseSchema>;
 
+// NOTE: the preprocess widens the schema's input type; the cast is type-level
+// only (fetchSource assumes input and output types match).
+const cohortsContract = z.preprocess(
+  normalizeCohortsResponse,
+  cohortsResponseSchema,
+) as unknown as z.ZodType<CohortsResponse>;
+
 const funnelSchema = z
   .object({
     feBuyers: z.number().nullish(),
@@ -73,7 +120,7 @@ export interface CohortFilters extends DateWindow {
 export function getCohorts(
   filters: CohortFilters = {},
 ): Promise<SourceResult<CohortsResponse>> {
-  return fetchSource("/internal/admin/ceo/cohorts", cohortsResponseSchema, {
+  return fetchSource("/internal/admin/ceo/cohorts", cohortsContract, {
     ...filters,
   });
 }

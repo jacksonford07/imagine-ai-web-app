@@ -4,11 +4,12 @@ import type { SourceResult } from "../contract";
 import { fetchSource } from "./client";
 
 // Domain adapter for the /ceo overview page (US-027) over the bot's
-// GET /internal/admin/ceo/kpis. The schema is deliberately tolerant: every
-// metric may arrive as a bare number, null, an override envelope
+// GET /internal/admin/ceo/kpis. The bot nests each group's values under
+// `metrics` and reports lastSyncedAt per source; flattenGroup normalizes both
+// to the flat shape the page consumes. The schema stays tolerant on top of
+// that: every metric may arrive as a bare number, null, an override envelope
 // ({ value, overridden, reason, author }), or be absent entirely — all of
-// which normalize to MetricValue so the page renders "—" instead of failing
-// while the bot endpoint is still being built.
+// which normalize to MetricValue so the page renders "—" instead of failing.
 
 export type AffiliateFilter = "yes" | "no" | "both";
 
@@ -106,12 +107,49 @@ const pipelineGroupSchema = z
   })
   .passthrough();
 
+// Oldest non-null sync among the group's sources — the group badge warns on
+// the laggard, matching the page-level oldestSync.
+function collapseLastSynced(raw: unknown): string | null {
+  if (typeof raw === "string") return raw;
+  if (raw === null || raw === undefined || typeof raw !== "object") {
+    return null;
+  }
+  let oldest: string | null = null;
+  for (const value of Object.values(raw)) {
+    if (typeof value !== "string") continue;
+    if (oldest === null || new Date(value) < new Date(oldest)) oldest = value;
+  }
+  return oldest;
+}
+
+// Normalizes a bot KpiGroup ({ lastSyncedAt: Record<source, iso|null>,
+// metrics: {...} }) — or an already-flat group — to the flat shape the page
+// reads. Also folds the bot's conversionRateFe spelling into feConversionRate.
+function flattenGroup(raw: unknown): Record<string, unknown> {
+  if (raw === null || raw === undefined || typeof raw !== "object") {
+    return { lastSyncedAt: null };
+  }
+  const group = raw as Record<string, unknown>;
+  const metrics =
+    typeof group.metrics === "object" && group.metrics !== null
+      ? (group.metrics as Record<string, unknown>)
+      : group;
+  const flat: Record<string, unknown> = {
+    ...metrics,
+    lastSyncedAt: collapseLastSynced(group.lastSyncedAt),
+  };
+  if (flat.feConversionRate === undefined && "conversionRateFe" in flat) {
+    flat.feConversionRate = flat.conversionRateFe;
+  }
+  return flat;
+}
+
 // A missing or null group still parses (every metric inside normalizes to
 // the null MetricValue) so a partially-built bot payload never breaks the page.
 function tolerantGroup<T extends z.ZodTypeAny>(
   schema: T,
 ): z.ZodEffects<T, z.output<T>, unknown> {
-  return z.preprocess((v) => v ?? {}, schema);
+  return z.preprocess(flattenGroup, schema);
 }
 
 export const ceoKpisSchema = z.object({
