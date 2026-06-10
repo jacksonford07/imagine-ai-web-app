@@ -1,30 +1,32 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import { authConfig } from "@/auth.config";
+import { getAdminUserByEmail } from "@/lib/sources/bot/users";
 
-// Comma-separated allowlist in ALLOWED_EMAILS. Empty list denies everyone.
-export function isAllowedEmail(email: string, allowlist: string): boolean {
-  const target = email.trim().toLowerCase();
-  if (target === "") return false;
-  const allowed = allowlist
-    .split(",")
-    .map((entry) => entry.trim().toLowerCase())
-    .filter((entry) => entry.length > 0);
-  return allowed.includes(target);
-}
-
+// Roles live in the bot DB (US-025): sign-in resolves the user via
+// /internal/admin/users/by-email/:email. Unknown email -> denied. The
+// resolved role + fulfillmentAccess are persisted on the JWT at sign-in so
+// later requests (including edge middleware) never re-fetch.
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
-  secret: process.env.NEXTAUTH_SECRET,
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  ],
-  pages: { signIn: "/signin" },
+  ...authConfig,
   callbacks: {
-    signIn({ user }) {
-      return isAllowedEmail(user.email ?? "", process.env.ALLOWED_EMAILS ?? "");
+    ...authConfig.callbacks,
+    async signIn({ user }) {
+      const email = user.email ?? "";
+      if (email === "") return false;
+      const known = await getAdminUserByEmail(email);
+      return known.data !== null;
+    },
+    async jwt({ token, user }) {
+      // `user` is only present on initial sign-in; signIn() already vouched
+      // for the email, this fetch just pins role claims onto the token.
+      if (user !== undefined && typeof user.email === "string") {
+        const known = await getAdminUserByEmail(user.email);
+        if (known.data !== null) {
+          token.role = known.data.role;
+          token.fulfillmentAccess = known.data.fulfillmentAccess;
+        }
+      }
+      return token;
     },
   },
 });

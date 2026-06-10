@@ -3,25 +3,122 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Prism token structure on the Imagine navy brand — dark-first.
+   * Surfaces are a 5-step near-black navy elevation ramp (hue ~222, the
+   * existing Imagine primary family); surface-4 is the original brand
+   * navy #0f172a. Brand accent derives from the existing dark chart blue
+   * (hsl 220 70% 50%) — no new palette.
+   */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 4%;
-    --primary: 240 6% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 6% 10%;
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-    --accent: 240 5% 96%;
-    --accent-foreground: 240 6% 10%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 240 5% 65%;
-    --radius: 0.65rem;
+    /* surface elevation (near-black navy) */
+    --surface-0: #060911;
+    --surface-1: #080d16;
+    --surface-2: #0a0f1a;
+    --surface-3: #0b111e;
+    --surface-4: #0f172a;
+
+    /* foreground opacities */
+    --fg-primary: rgba(255, 255, 255, 0.92);
+    --fg-secondary: rgba(255, 255, 255, 0.7);
+    --fg-muted: rgba(255, 255, 255, 0.5);
+    --fg-subtle: rgba(255, 255, 255, 0.3);
+
+    /* hairlines + interaction fills */
+    --line: rgba(255, 255, 255, 0.08);
+    --line-soft: rgba(255, 255, 255, 0.06);
+    --fill-hover: rgba(255, 255, 255, 0.04);
+    --fill-active: rgba(255, 255, 255, 0.1);
+
+    /* glass surfaces */
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-border-hover: rgba(255, 255, 255, 0.2);
+
+    /* scrims */
+    --scrim: rgba(0, 0, 0, 0.5);
+    --scrim-strong: rgba(0, 0, 0, 0.8);
+
+    /* brand accent (HSL triples so Tailwind alpha modifiers work) */
+    --brand: 220 70% 50%;
+    --brand-soft: 220 70% 64%;
+    --brand-strong: 220 70% 42%;
+
+    /* state colors — one each */
+    --warning: 43 96% 56%;
+    --success: 158 64% 52%;
+    --error: 0 91% 71%;
+
+    /* shadcn semantic vars mapped onto the tokens above (dark-first) */
+    --background: 224 48% 4.5%; /* surface-0 */
+    --foreground: 222 12% 93%; /* fg-primary over surface-0 */
+    --card: 221 44% 7%; /* surface-2 */
+    --card-foreground: 222 12% 93%;
+    --popover: 221 46% 8%; /* surface-3 */
+    --popover-foreground: 222 12% 93%;
+    --primary: 220 70% 50%; /* brand */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 11%; /* surface-4 */
+    --secondary-foreground: 222 12% 93%;
+    --muted: 221 46% 8%; /* surface-3 */
+    --muted-foreground: 222 8% 55%; /* fg-muted over navy */
+    --accent: 222 17% 16%; /* fill-active over navy */
+    --accent-foreground: 222 12% 93%;
+    --destructive: 0 91% 71%; /* error */
+    --destructive-foreground: 224 48% 4.5%;
+    --border: 222 16% 14%; /* line over navy */
+    --input: 222 16% 14%;
+    --ring: 220 70% 50%; /* brand */
+    --radius: 0.625rem;
+    --chart-1: 220 70% 50%; /* single-accent monochrome ramp */
+    --chart-2: 220 70% 64%;
+    --chart-3: 220 36% 38%;
+    --chart-4: 222 20% 60%;
+    --chart-5: 222 12% 78%;
+    --sidebar: 219 47% 6%; /* surface-1 */
+    --sidebar-foreground: 222 12% 93%;
+    --sidebar-primary: 220 70% 50%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 222 17% 16%;
+    --sidebar-accent-foreground: 222 12% 93%;
+    --sidebar-border: 222 16% 14%;
+    --sidebar-ring: 220 70% 50%;
+  }
+
+  /* dark-first: .dark mirrors :root so the app is dark regardless of system theme */
+  .dark {
+    --background: 224 48% 4.5%;
+    --foreground: 222 12% 93%;
+    --card: 221 44% 7%;
+    --card-foreground: 222 12% 93%;
+    --popover: 221 46% 8%;
+    --popover-foreground: 222 12% 93%;
+    --primary: 220 70% 50%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 222 12% 93%;
+    --muted: 221 46% 8%;
+    --muted-foreground: 222 8% 55%;
+    --accent: 222 17% 16%;
+    --accent-foreground: 222 12% 93%;
+    --destructive: 0 91% 71%;
+    --destructive-foreground: 224 48% 4.5%;
+    --border: 222 16% 14%;
+    --input: 222 16% 14%;
+    --ring: 220 70% 50%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 220 70% 64%;
+    --chart-3: 220 36% 38%;
+    --chart-4: 222 20% 60%;
+    --chart-5: 222 12% 78%;
+    --sidebar: 219 47% 6%;
+    --sidebar-foreground: 222 12% 93%;
+    --sidebar-primary: 220 70% 50%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 222 17% 16%;
+    --sidebar-accent-foreground: 222 12% 93%;
+    --sidebar-border: 222 16% 14%;
+    --sidebar-ring: 220 70% 50%;
   }
 
   * {

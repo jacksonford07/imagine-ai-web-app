@@ -27,7 +27,7 @@ function buildQuery(params: Record<string, QueryValue>): string {
 
 // Single choke point: injects the internal secret, never throws, validates the
 // response against the bot contract. The secret stays server-side.
-async function fetchSource<T>(
+export async function fetchSource<T>(
   path: string,
   schema: z.ZodType<T>,
   params: Record<string, QueryValue> = {},
