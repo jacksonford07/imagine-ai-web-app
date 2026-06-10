@@ -16,8 +16,10 @@ import { sidebarData, filterNavGroups } from "./sidebar-data";
 
 export function AppSidebar({
   badges,
+  user,
 }: {
   badges?: NavBadges;
+  user?: { name: string; email: string; avatar?: string };
 }): React.ReactElement {
   const { collapsible, variant } = useLayout();
   const roleInfo = useRole();
@@ -33,7 +35,7 @@ export function AppSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={user ?? sidebarData.user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

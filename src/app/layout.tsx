@@ -11,8 +11,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Imagine AI — Bot Dashboard",
-  description: "Read-only observability for the imagine-ai-bot.",
+  title: "Imagine Education",
+  description: "Imagine Education CEO dashboard.",
 };
 
 export default function RootLayout({
