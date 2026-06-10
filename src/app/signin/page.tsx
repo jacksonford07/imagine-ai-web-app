@@ -1,4 +1,4 @@
-import { Command } from "lucide-react";
+import { ImagineLogo } from "@/components/layout/imagine-logo";
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +31,7 @@ export default function SignInPage(): React.ReactElement {
       {/* Brand panel */}
       <div className="relative hidden flex-col justify-between border-r border-border bg-zinc-950 p-10 lg:flex">
         <div className="flex items-center gap-2 text-lg font-semibold tracking-tight">
-          <Command className="h-6 w-6 text-primary" />
+          <ImagineLogo className="h-6 w-6" />
           <span>Imagine AI</span>
         </div>
         <blockquote className="space-y-2">

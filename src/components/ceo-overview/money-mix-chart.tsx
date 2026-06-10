@@ -86,6 +86,8 @@ export function MoneyMixChart({
                 color: "var(--fg-primary)",
                 fontSize: 12,
               }}
+              itemStyle={{ color: "var(--fg-primary)" }}
+              labelStyle={{ color: "var(--fg-primary)" }}
             />
             <Bar dataKey="cents" radius={[4, 4, 0, 0]}>
               {present.map((d) => (

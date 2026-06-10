@@ -53,7 +53,7 @@ export function AddUserForm(): React.ReactElement {
             id="add-user-email"
             type="email"
             required
-            placeholder="name@fanvue.com"
+            placeholder="name@imagineeducation.com"
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);

@@ -127,6 +127,8 @@ export function CohortOverlayChart({
                 color: "hsl(var(--popover-foreground))",
                 fontSize: 12,
               }}
+              itemStyle={{ color: "hsl(var(--popover-foreground))" }}
+              labelStyle={{ color: "hsl(var(--popover-foreground))" }}
             />
             <Legend
               wrapperStyle={{ fontSize: 12 }}

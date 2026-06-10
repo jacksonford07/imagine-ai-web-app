@@ -2,7 +2,6 @@ import {
   Activity,
   ArrowLeftRight,
   Bell,
-  Command,
   FileText,
   Inbox,
   LayoutDashboard,
@@ -14,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { ImagineLogo } from "@/components/layout/imagine-logo";
 import { isEditor } from "@/lib/auth/role";
 import type { RoleInfo } from "@/lib/auth/role";
 
@@ -41,7 +41,7 @@ export interface NavGroupData {
 
 export interface Team {
   name: string;
-  logo: LucideIcon;
+  logo: React.ComponentType<{ className?: string }>;
   plan: string;
 }
 
@@ -53,7 +53,7 @@ export interface SidebarData {
 
 export const sidebarData: SidebarData = {
   user: { name: "Imagine AI", email: "ops@imagine.education" },
-  teams: [{ name: "Imagine Education", logo: Command, plan: "CEO Dashboard" }],
+  teams: [{ name: "Imagine Education", logo: ImagineLogo, plan: "CEO Dashboard" }],
   navGroups: [
     {
       title: "CEO",

@@ -76,6 +76,8 @@ export function RatesChart({
                 color: "var(--fg-primary)",
                 fontSize: 12,
               }}
+              itemStyle={{ color: "var(--fg-primary)" }}
+              labelStyle={{ color: "var(--fg-primary)" }}
             />
             <Bar
               dataKey="pct"
