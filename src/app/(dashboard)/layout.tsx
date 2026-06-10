@@ -22,13 +22,18 @@ export default async function DashboardLayout({
   const roleInfo = resolveRoleInfo(session?.user);
   const badges: NavBadges =
     reviewQueue.data !== null ? { reviewQueue: reviewQueue.data.count } : {};
+  const sessionUser = {
+    name: session?.user?.name ?? "Imagine Education",
+    email: session?.user?.email ?? "",
+    avatar: session?.user?.image ?? undefined,
+  };
 
   return (
     <RoleProvider value={roleInfo}>
       <SearchProvider>
         <LayoutProvider>
           <SidebarProvider>
-            <AppSidebar badges={badges} />
+            <AppSidebar badges={badges} user={sessionUser} />
             <SidebarInset>
               <Header />
               <main className="flex-1 overflow-y-auto px-6 py-6">
