@@ -68,6 +68,10 @@ const overviewGroupSchema = z
     grossCents: metricSchema,
     roas: metricSchema,
     feConversionRate: metricSchema,
+    // Funnel completeness + retention rates (tolerant: "—" until served).
+    feClickToSaleRate: metricSchema,
+    refundRate: metricSchema,
+    chargebackRate: metricSchema,
   })
   .passthrough();
 
@@ -93,6 +97,19 @@ const beEngineGroupSchema = z
     newMtoCustomers: metricSchema,
     newHtoCustomers: metricSchema,
     newPtoCustomers: metricSchema,
+    // Funnel completeness (tolerant: "—" until served).
+    callsHeld: metricSchema,
+    showRate: metricSchema,
+    closeRateHeld: metricSchema,
+    // Ascension timing (days).
+    meanDaysToAscension: metricSchema,
+    medianDaysToAscension: metricSchema,
+    daysFeToBe: metricSchema,
+    timeToFirstCallDays: metricSchema,
+    // Customer & retention.
+    activeCustomers: metricSchema,
+    ltvCents: metricSchema,
+    paybackDays: metricSchema,
   })
   .passthrough();
 

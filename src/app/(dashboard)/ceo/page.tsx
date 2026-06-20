@@ -5,32 +5,35 @@ import { WindowFilter } from "@/components/widgets/window-filter";
 import { LastSynced } from "@/components/widgets/last-synced";
 import { RefreshNow } from "@/components/widgets/refresh-now";
 import { AffiliateFilter } from "@/components/ceo-overview/affiliate-filter";
-import { AscensionLadder } from "@/components/ceo-overview/ascension-ladder";
 import {
-  KpiSection,
-  type KpiCardDef,
-} from "@/components/ceo-overview/kpi-section";
+  DeltaStatCard,
+  type PaceBar,
+} from "@/components/ceo-dashboard/delta-stat-card";
 import {
-  MoneyMixChart,
-  type MoneyBar,
-} from "@/components/ceo-overview/money-mix-chart";
+  MetricTable,
+  type MetricRow,
+} from "@/components/ceo-dashboard/metric-table";
+import { AttentionBanner } from "@/components/ceo-dashboard/attention-banner";
+import { DailyBarsChart } from "@/components/ceo-dashboard/daily-bars-chart";
 import {
-  RatesChart,
-  type RateBar,
-} from "@/components/ceo-overview/rates-chart";
-import {
-  ceoKpisSchema,
   getCeoKpis,
   type AffiliateFilter as AffiliateValue,
-  type CeoKpis,
+  type MetricValue,
 } from "@/lib/sources/bot/kpis";
+import { getCeoOverviewDaily } from "@/lib/sources/bot/overview";
+import { getReviewQueueCount } from "@/lib/sources/bot/review-queue";
+import {
+  deltaFraction,
+  monthElapsedFraction,
+  projectEndOfMonth,
+  resolveWindow,
+  withPrior,
+} from "@/lib/period";
+import { formatCents, formatCompactCents } from "@/lib/format";
+import { formatMetric, type MetricKind } from "@/components/ceo-overview/metric-format";
 import { single, type RawSearchParams } from "@/lib/search-params";
 
 export const dynamic = "force-dynamic";
-
-// Renders the full sheet structure with null metrics ("—") whenever the bot
-// endpoint is missing or partial — the page never blanks or shows zeros.
-const EMPTY_KPIS: CeoKpis = ceoKpisSchema.parse({});
 
 function asAffiliate(
   value: string | string[] | undefined,
@@ -39,7 +42,6 @@ function asAffiliate(
   return v === "yes" || v === "no" || v === "both" ? v : undefined;
 }
 
-/** Oldest non-null group sync — the page-level badge warns on the laggard. */
 function oldestSync(times: (string | null)[]): string | null {
   let oldest: string | null = null;
   for (const t of times) {
@@ -49,125 +51,129 @@ function oldestSync(times: (string | null)[]): string | null {
   return oldest;
 }
 
+/** A label → value (→ delta) row from a current/prior metric pair. */
+function row(
+  label: string,
+  kind: MetricKind,
+  cur?: MetricValue,
+  prior?: MetricValue,
+): MetricRow {
+  return {
+    label,
+    value: formatMetric(kind, cur?.value ?? null),
+    delta:
+      cur !== undefined && prior !== undefined
+        ? deltaFraction(cur.value, prior.value)
+        : undefined,
+  };
+}
+
 export default async function CeoOverviewPage({
   searchParams,
 }: {
   searchParams: Promise<RawSearchParams>;
 }): Promise<React.ReactElement> {
   const sp = await searchParams;
-  const from = single(sp.from);
-  const to = single(sp.to);
+  const fromParam = single(sp.from);
+  const toParam = single(sp.to);
   const affiliate = asAffiliate(sp.affiliate);
+  const isMtd = fromParam === undefined && toParam === undefined;
 
-  const { data, error } = await getCeoKpis({ from, to, affiliate });
-  const kpis = data ?? EMPTY_KPIS;
-  const { overview, feEngine, beEngine, pipeline } = kpis;
+  const { current, prior, priorLabel } = withPrior(
+    resolveWindow(fromParam, toParam),
+  );
 
-  const drillParams = new URLSearchParams();
-  if (from !== undefined) drillParams.set("from", from);
-  if (to !== undefined) drillParams.set("to", to);
-  if (affiliate !== undefined) drillParams.set("affiliate", affiliate);
-  const drillQs = drillParams.toString();
-  const overrideHref = `/ceo/transactions${drillQs !== "" ? `?${drillQs}` : ""}`;
+  const [cur, prev, daily, reviewQueue] = await Promise.all([
+    getCeoKpis({ from: current.from, to: current.to, affiliate }),
+    getCeoKpis({ from: prior.from, to: prior.to, affiliate }),
+    getCeoOverviewDaily({ from: current.from, to: current.to }),
+    getReviewQueueCount(),
+  ]);
 
-  const overviewCards: KpiCardDef[] = [
-    { label: "Ad spend", kind: "cents", metric: overview.adSpendCents },
-    {
-      label: "Cash collected",
-      kind: "cents",
-      metric: overview.cashCollectedCents,
-    },
-    { label: "FE CPA", kind: "cents", metric: overview.feCpaCents },
-    { label: "FE AOV", kind: "cents", metric: overview.feAovCents },
-    { label: "Bump rate", kind: "percent", metric: overview.bumpRate },
-    { label: "OTO rate", kind: "percent", metric: overview.otoRate },
-    { label: "Gross", kind: "cents", metric: overview.grossCents },
-    { label: "ROAS", kind: "ratio", metric: overview.roas },
-    {
-      label: "FE conversion",
-      kind: "percent",
-      metric: overview.feConversionRate,
-    },
+  const c = cur.data;
+  const p = prev.data;
+  const deltaLabel = `vs ${priorLabel}`;
+
+  const overview = c?.overview;
+  const fe = c?.feEngine;
+  const be = c?.beEngine;
+  const pOverview = p?.overview;
+  const pFe = p?.feEngine;
+  const pBe = p?.beEngine;
+
+  // Cash collected pace: only project when the window is the live month to date.
+  const cashValue = overview?.cashCollectedCents.value ?? null;
+  const pace: PaceBar | null =
+    isMtd && cashValue !== null
+      ? {
+          fraction: monthElapsedFraction(),
+          label: `${formatCompactCents(projectEndOfMonth(cashValue))} EOM pace`,
+        }
+      : null;
+
+  const marketingRows: MetricRow[] = [
+    row("FE sales", "count", fe?.feSalesCount, pFe?.feSalesCount),
+    row("FE revenue", "cents", fe?.feSalesRevenueCents, pFe?.feSalesRevenueCents),
+    row("FE CPA (blended)", "cents", fe?.feCpaCents, pFe?.feCpaCents),
+    row("FE AOV", "cents", fe?.feAovCents, pFe?.feAovCents),
+    row("FE ROAS", "ratio", fe?.feRoas, pFe?.feRoas),
+    row("Bump rate", "percent", overview?.bumpRate, pOverview?.bumpRate),
+    row("OTO rate", "percent", overview?.otoRate, pOverview?.otoRate),
+    row(
+      "FE click → sale",
+      "percent",
+      overview?.feClickToSaleRate,
+      pOverview?.feClickToSaleRate,
+    ),
   ];
 
-  const feCards: KpiCardDef[] = [
-    { label: "FE sales", kind: "count", metric: feEngine.feSalesCount },
-    { label: "FE AOV", kind: "cents", metric: feEngine.feAovCents },
-    {
-      label: "FE sales revenue",
-      kind: "cents",
-      metric: feEngine.feSalesRevenueCents,
-    },
-    { label: "FE CPA", kind: "cents", metric: feEngine.feCpaCents },
-    { label: "FE ROAS", kind: "ratio", metric: feEngine.feRoas },
+  const salesRows: MetricRow[] = [
+    row("Calls booked", "count", be?.callsBooked, pBe?.callsBooked),
+    row("Calls held", "count", be?.callsHeld, pBe?.callsHeld),
+    row("Show rate", "percent", be?.showRate, pBe?.showRate),
+    row("BE revenue", "cents", be?.beRevenueCents, pBe?.beRevenueCents),
+    row("HTO AOV", "cents", be?.htoAovCents, pBe?.htoAovCents),
+    row("Ascension rate", "percent", be?.ascensionRate, pBe?.ascensionRate),
+    row("Close rate (held)", "percent", be?.closeRateHeld, pBe?.closeRateHeld),
+    row("Days FE → BE", "days", be?.daysFeToBe, pBe?.daysFeToBe),
   ];
 
-  const beCards: KpiCardDef[] = [
-    { label: "Calls booked", kind: "count", metric: beEngine.callsBooked },
-    { label: "BE revenue", kind: "cents", metric: beEngine.beRevenueCents },
-    {
-      label: "BE new customers",
-      kind: "count",
-      metric: beEngine.beNewCustomers,
-    },
-    {
-      label: "Ascension rate",
-      kind: "percent",
-      metric: beEngine.ascensionRate,
-    },
-    { label: "HTO AOV", kind: "cents", metric: beEngine.htoAovCents },
-    { label: "New MTO", kind: "count", metric: beEngine.newMtoCustomers },
-    { label: "New HTO", kind: "count", metric: beEngine.newHtoCustomers },
-    { label: "New PTO", kind: "count", metric: beEngine.newPtoCustomers },
+  const fulfillmentRows: MetricRow[] = [
+    row("New LTO", "count", fe?.feSalesCount, pFe?.feSalesCount),
+    row("New MTO", "count", be?.newMtoCustomers, pBe?.newMtoCustomers),
+    row("New HTO", "count", be?.newHtoCustomers, pBe?.newHtoCustomers),
+    row("New PTO", "count", be?.newPtoCustomers, pBe?.newPtoCustomers),
+    row("Active customers", "count", be?.activeCustomers, pBe?.activeCustomers),
+    row("BE revenue", "cents", be?.beRevenueCents, pBe?.beRevenueCents),
+    row("Refund rate", "percent", overview?.refundRate, pOverview?.refundRate),
+    row(
+      "Chargeback rate",
+      "percent",
+      overview?.chargebackRate,
+      pOverview?.chargebackRate,
+    ),
   ];
 
-  const pipelineCards: KpiCardDef[] = [
-    { label: "Leads", kind: "count", metric: pipeline.leads },
-    { label: "CPL", kind: "cents", metric: pipeline.cplCents },
-    {
-      label: "Cost per call booked",
-      kind: "cents",
-      metric: pipeline.costPerCallBookedCents,
-    },
-    {
-      label: "Cash per lead",
-      kind: "cents",
-      metric: pipeline.cashPerLeadCents,
-    },
-    { label: "Profit", kind: "cents", metric: pipeline.profitCents },
-  ];
+  const dailyPoints = (daily.data?.points ?? []).map((pt) => ({
+    label: pt.date.slice(5),
+    cashCents: pt.cashCents ?? null,
+    spendCents: pt.spendCents ?? null,
+  }));
 
-  const moneyBars: MoneyBar[] = [
-    { label: "Gross", cents: overview.grossCents.value, chart: 1 },
-    {
-      label: "Collected",
-      cents: overview.cashCollectedCents.value,
-      chart: 2,
-    },
-    {
-      label: "FE revenue",
-      cents: feEngine.feSalesRevenueCents.value,
-      chart: 4,
-    },
-    { label: "BE revenue", cents: beEngine.beRevenueCents.value, chart: 5 },
-    { label: "Ad spend", cents: overview.adSpendCents.value, chart: 3 },
-    { label: "Profit", cents: pipeline.profitCents.value, chart: 2 },
-  ];
+  const attention: string[] = [];
+  if (reviewQueue.data !== null && reviewQueue.data.count > 0) {
+    attention.push(
+      `${String(reviewQueue.data.count)} customer records awaiting manual review`,
+    );
+  }
 
-  const rateBars: RateBar[] = [
-    { label: "Bump rate", fraction: overview.bumpRate.value },
-    { label: "OTO rate", fraction: overview.otoRate.value },
-    { label: "FE conversion", fraction: overview.feConversionRate.value },
-    { label: "Ascension rate", fraction: beEngine.ascensionRate.value },
-  ];
-
-  const ladderNeverSynced =
-    feEngine.lastSyncedAt === null && beEngine.lastSyncedAt === null;
+  const everythingDown =
+    cur.error !== null && prev.error !== null && daily.error !== null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
-        title="CEO Overview"
+        title="Overview"
         description="Live KPI sheet — defaults to this month to date."
         actions={
           <>
@@ -175,10 +181,9 @@ export default async function CeoOverviewPage({
             <AffiliateFilter />
             <LastSynced
               at={oldestSync([
-                overview.lastSyncedAt,
-                feEngine.lastSyncedAt,
-                beEngine.lastSyncedAt,
-                pipeline.lastSyncedAt,
+                overview?.lastSyncedAt ?? null,
+                fe?.lastSyncedAt ?? null,
+                be?.lastSyncedAt ?? null,
               ])}
             />
             <RefreshNow tick="all" />
@@ -186,90 +191,107 @@ export default async function CeoOverviewPage({
         }
       />
 
-      {error !== null && (
+      {everythingDown && (
         <Card className="flex items-start gap-3 border-line bg-glass p-4">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-brand-soft" />
           <div className="text-sm">
             <p className="font-medium text-fg-primary">Awaiting KPI data</p>
             <p className="mt-1 text-fg-muted">
-              The KPI endpoint isn&apos;t serving data yet — metrics populate as
-              soon as the bot pipeline lands. ({error})
+              The KPI endpoints aren&apos;t serving data yet — metrics populate
+              as soon as the bot pipeline lands. ({cur.error})
             </p>
           </div>
         </Card>
       )}
 
-      <KpiSection
-        title="Overview"
-        lastSyncedAt={overview.lastSyncedAt}
-        cards={overviewCards}
-        overrideHref={overrideHref}
-      />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <MoneyMixChart title="Revenue & spend" data={moneyBars} />
-        <RatesChart title="Funnel rates" data={rateBars} />
-      </div>
-
-      <KpiSection
-        title="FE engine"
-        lastSyncedAt={feEngine.lastSyncedAt}
-        cards={feCards}
-        overrideHref={overrideHref}
-      />
-
-      <KpiSection
-        title="BE engine"
-        lastSyncedAt={beEngine.lastSyncedAt}
-        cards={beCards}
-        overrideHref={overrideHref}
-      >
-        <div className="pt-1">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-fg-subtle">
-            Ascension ladder — new customers this window
-          </p>
-          <AscensionLadder
-            rungs={[
-              {
-                key: "LTO",
-                short: "LTO",
-                name: "Low Ticket Offer",
-                caption: "front-end buyers",
-                metric: feEngine.feSalesCount,
-              },
-              {
-                key: "MTO",
-                short: "MTO",
-                name: "Mid Ticket Offer",
-                caption: "new customers",
-                metric: beEngine.newMtoCustomers,
-              },
-              {
-                key: "HTO",
-                short: "HTO",
-                name: "High Ticket Offer",
-                caption: "new customers",
-                metric: beEngine.newHtoCustomers,
-              },
-              {
-                key: "PTO",
-                short: "PTO",
-                name: "Premium Ticket Offer",
-                caption: "new customers",
-                metric: beEngine.newPtoCustomers,
-              },
-            ]}
-            neverSynced={ladderNeverSynced}
-            overrideHref={overrideHref}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-2">
+          <DeltaStatCard
+            label="Cash collected · MTD"
+            value={formatCents(cashValue)}
+            delta={deltaFraction(
+              cashValue,
+              pOverview?.cashCollectedCents.value ?? null,
+            )}
+            deltaLabel={deltaLabel}
+            pace={pace}
           />
         </div>
-      </KpiSection>
+        <DeltaStatCard
+          label="Blended ROAS"
+          value={formatMetric("ratio", overview?.roas.value ?? null)}
+          delta={deltaFraction(
+            overview?.roas.value ?? null,
+            pOverview?.roas.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="Ad spend · MTD"
+          value={formatCents(overview?.adSpendCents.value ?? null)}
+          delta={deltaFraction(
+            overview?.adSpendCents.value ?? null,
+            pOverview?.adSpendCents.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+      </div>
 
-      <KpiSection
-        title="Pipeline & unit economics"
-        lastSyncedAt={pipeline.lastSyncedAt}
-        cards={pipelineCards}
-        overrideHref={overrideHref}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-2">
+          <DeltaStatCard
+            label="Profit estimate"
+            value={formatCents(c?.pipeline.profitCents.value ?? null)}
+            delta={deltaFraction(
+              c?.pipeline.profitCents.value ?? null,
+              p?.pipeline.profitCents.value ?? null,
+            )}
+            deltaLabel={deltaLabel}
+          />
+        </div>
+        <DeltaStatCard
+          label="Gross"
+          value={formatCents(overview?.grossCents.value ?? null)}
+          delta={deltaFraction(
+            overview?.grossCents.value ?? null,
+            pOverview?.grossCents.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="FE conversion"
+          value={formatMetric("percent", overview?.feConversionRate.value ?? null)}
+          delta={deltaFraction(
+            overview?.feConversionRate.value ?? null,
+            pOverview?.feConversionRate.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+      </div>
+
+      <AttentionBanner items={attention} />
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <MetricTable
+          title="Marketing"
+          rows={marketingRows}
+          href="/ceo/marketing"
+        />
+        <MetricTable title="Sales" rows={salesRows} href="/ceo/ascensions" />
+        <MetricTable
+          title="Fulfillment"
+          rows={fulfillmentRows}
+          href="/ceo/payments"
+        />
+      </div>
+
+      <DailyBarsChart
+        title="Daily cash & spend"
+        data={dailyPoints}
+        series={[
+          { key: "cashCents", label: "Cash", chart: 1 },
+          { key: "spendCents", label: "Spend", chart: 3 },
+        ]}
       />
     </div>
   );

@@ -1,14 +1,18 @@
 import {
   Activity,
   ArrowLeftRight,
+  ArrowUpCircle,
   Bell,
+  CreditCard,
   FileText,
   Inbox,
   LayoutDashboard,
   Layers,
+  Megaphone,
   MessagesSquare,
   Percent,
   Plug,
+  TrendingUp,
   TriangleAlert,
   Users,
 } from "lucide-react";
@@ -60,6 +64,10 @@ export const sidebarData: SidebarData = {
       access: "any",
       items: [
         { title: "Overview", url: "/ceo", icon: LayoutDashboard, exact: true },
+        { title: "Marketing", url: "/ceo/marketing", icon: Megaphone },
+        { title: "Payments", url: "/ceo/payments", icon: CreditCard },
+        { title: "Trends", url: "/ceo/trends", icon: TrendingUp },
+        { title: "Ascensions", url: "/ceo/ascensions", icon: ArrowUpCircle },
         { title: "Cohorts", url: "/ceo/cohorts", icon: Layers },
         {
           title: "Transactions",
