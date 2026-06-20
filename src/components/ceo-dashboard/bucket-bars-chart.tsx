@@ -29,7 +29,7 @@ export function BucketBarsChart({
   const hasData = data.some((d) => typeof d.count === "number");
 
   return (
-    <Card className="border-line bg-glass p-5">
+    <Card className="border-line bg-glass p-4 sm:p-5">
       <p className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-muted">
         {title}
       </p>
@@ -45,15 +45,17 @@ export function BucketBarsChart({
               dataKey="label"
               tickLine={false}
               axisLine={false}
-              fontSize={12}
+              fontSize={11}
+              interval="preserveStartEnd"
+              minTickGap={8}
               stroke="var(--fg-muted)"
             />
             <YAxis
               allowDecimals={false}
               tickLine={false}
               axisLine={false}
-              fontSize={12}
-              width={40}
+              fontSize={11}
+              width={36}
               stroke="var(--fg-muted)"
             />
             <Tooltip

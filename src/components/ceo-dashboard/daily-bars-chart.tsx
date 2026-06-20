@@ -47,7 +47,7 @@ export function DailyBarsChart({
   );
 
   return (
-    <Card className="border-line bg-glass p-5">
+    <Card className="border-line bg-glass p-4 sm:p-5">
       <p className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-muted">
         {title}
       </p>
@@ -65,7 +65,8 @@ export function DailyBarsChart({
               axisLine={false}
               fontSize={11}
               stroke="var(--fg-muted)"
-              minTickGap={16}
+              interval="preserveStartEnd"
+              minTickGap={24}
             />
             <YAxis
               tickFormatter={(v) =>
@@ -73,8 +74,8 @@ export function DailyBarsChart({
               }
               tickLine={false}
               axisLine={false}
-              fontSize={12}
-              width={52}
+              fontSize={11}
+              width={44}
               stroke="var(--fg-muted)"
             />
             <Tooltip

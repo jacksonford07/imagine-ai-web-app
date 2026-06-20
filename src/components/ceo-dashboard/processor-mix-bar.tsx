@@ -32,7 +32,7 @@ export function ProcessorMixBar({
   };
 
   return (
-    <Card className="border-line bg-glass p-5">
+    <Card className="border-line bg-glass p-4 sm:p-5">
       <p className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-muted">
         Payment processor mix
       </p>
