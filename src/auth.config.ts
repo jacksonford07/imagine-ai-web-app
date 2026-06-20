@@ -13,6 +13,10 @@ export const authConfig = {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Always show Google's account chooser instead of silently reusing the
+      // browser's existing session — lets users pick the authorized account
+      // (e.g. on mobile where only the logged-in Google account is offered).
+      authorization: { params: { prompt: "select_account" } },
     }),
   ],
   pages: { signIn: "/signin" },
