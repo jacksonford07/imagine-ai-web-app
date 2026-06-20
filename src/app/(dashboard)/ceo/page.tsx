@@ -119,18 +119,23 @@ export default async function CeoOverviewPage({
     row("FE ROAS", "ratio", fe?.feRoas, pFe?.feRoas),
     row("Bump rate", "percent", overview?.bumpRate, pOverview?.bumpRate),
     row("OTO rate", "percent", overview?.otoRate, pOverview?.otoRate),
-    row("FE click → sale", "percent"),
+    row(
+      "FE click → sale",
+      "percent",
+      overview?.feClickToSaleRate,
+      pOverview?.feClickToSaleRate,
+    ),
   ];
 
   const salesRows: MetricRow[] = [
     row("Calls booked", "count", be?.callsBooked, pBe?.callsBooked),
-    row("Calls held", "count"),
-    row("Show rate", "percent"),
+    row("Calls held", "count", be?.callsHeld, pBe?.callsHeld),
+    row("Show rate", "percent", be?.showRate, pBe?.showRate),
     row("BE revenue", "cents", be?.beRevenueCents, pBe?.beRevenueCents),
     row("HTO AOV", "cents", be?.htoAovCents, pBe?.htoAovCents),
     row("Ascension rate", "percent", be?.ascensionRate, pBe?.ascensionRate),
-    row("Close rate (held)", "percent"),
-    row("Days FE → BE", "count"),
+    row("Close rate (held)", "percent", be?.closeRateHeld, pBe?.closeRateHeld),
+    row("Days FE → BE", "days", be?.daysFeToBe, pBe?.daysFeToBe),
   ];
 
   const fulfillmentRows: MetricRow[] = [
@@ -138,10 +143,15 @@ export default async function CeoOverviewPage({
     row("New MTO", "count", be?.newMtoCustomers, pBe?.newMtoCustomers),
     row("New HTO", "count", be?.newHtoCustomers, pBe?.newHtoCustomers),
     row("New PTO", "count", be?.newPtoCustomers, pBe?.newPtoCustomers),
-    row("Active customers", "count"),
+    row("Active customers", "count", be?.activeCustomers, pBe?.activeCustomers),
     row("BE revenue", "cents", be?.beRevenueCents, pBe?.beRevenueCents),
-    row("Refund rate", "percent"),
-    row("Chargeback rate", "percent"),
+    row("Refund rate", "percent", overview?.refundRate, pOverview?.refundRate),
+    row(
+      "Chargeback rate",
+      "percent",
+      overview?.chargebackRate,
+      pOverview?.chargebackRate,
+    ),
   ];
 
   const dailyPoints = (daily.data?.points ?? []).map((pt) => ({

@@ -33,6 +33,12 @@ export function formatSignedPercent(fraction: number | null): string {
   return `${sign}${(Math.abs(fraction) * 100).toFixed(1)}%`;
 }
 
+/** Days → "18d" / "17.4d". Renders "—" for null/NaN. */
+export function formatDays(value: number | null): string {
+  if (value === null || Number.isNaN(value)) return "—";
+  return `${value % 1 === 0 ? value.toLocaleString("en-US") : value.toFixed(1)}d`;
+}
+
 export function formatDateTime(iso: string | null): string {
   if (iso === null) return "—";
   const d = new Date(iso);

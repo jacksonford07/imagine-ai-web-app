@@ -14,15 +14,23 @@ import { LastSynced } from "@/components/widgets/last-synced";
 import { RefreshNow } from "@/components/widgets/refresh-now";
 import { AffiliateFilter } from "@/components/ceo-overview/affiliate-filter";
 import { DeltaStatCard } from "@/components/ceo-dashboard/delta-stat-card";
+import {
+  MetricTable,
+  type MetricRow,
+} from "@/components/ceo-dashboard/metric-table";
 import { FunnelBars } from "@/components/ceo-dashboard/funnel-bars";
 import { DailyBarsChart } from "@/components/ceo-dashboard/daily-bars-chart";
 import {
   getCeoKpis,
   type AffiliateFilter as AffiliateValue,
 } from "@/lib/sources/bot/kpis";
-import { getMarketing, type SplitRow } from "@/lib/sources/bot/marketing";
+import {
+  getMarketing,
+  type ChannelSpend,
+  type SplitRow,
+} from "@/lib/sources/bot/marketing";
 import { deltaFraction, resolveWindow, withPrior } from "@/lib/period";
-import { formatCents } from "@/lib/format";
+import { formatCents, formatCompactCents } from "@/lib/format";
 import {
   formatMetric,
   type MetricKind,
@@ -72,6 +80,7 @@ export default async function MarketingPage({
   const o = cur.data?.overview;
   const fe = cur.data?.feEngine;
   const pipeline = cur.data?.pipeline;
+  const pPipeline = prev.data?.pipeline;
   const be = cur.data?.beEngine;
   const pO = prev.data?.overview;
   const pFe = prev.data?.feEngine;
@@ -79,6 +88,52 @@ export default async function MarketingPage({
 
   const split: SplitRow[] = marketing.data?.split ?? [];
   const funnel = marketing.data?.fullFunnel;
+  const channels: ChannelSpend[] = marketing.data?.spendByChannel ?? [];
+  const budget = marketing.data?.budgetTargetCents ?? null;
+  const adSpend = o?.adSpendCents.value ?? null;
+
+  const spendPace =
+    adSpend !== null && budget !== null && budget > 0
+      ? {
+          fraction: adSpend / budget,
+          label: `${formatCompactCents(adSpend)} of ${formatCompactCents(budget)} target`,
+        }
+      : null;
+
+  const unitEconomics: MetricRow[] = [
+    {
+      label: "CAC (FE CPA)",
+      value: formatCents(fe?.feCpaCents.value ?? null),
+      delta: deltaFraction(
+        fe?.feCpaCents.value ?? null,
+        pFe?.feCpaCents.value ?? null,
+      ),
+    },
+    {
+      label: "Cost per lead",
+      value: formatCents(pipeline?.cplCents.value ?? null),
+      delta: deltaFraction(
+        pipeline?.cplCents.value ?? null,
+        pPipeline?.cplCents.value ?? null,
+      ),
+    },
+    {
+      label: "Cost per call booked",
+      value: formatCents(pipeline?.costPerCallBookedCents.value ?? null),
+      delta: deltaFraction(
+        pipeline?.costPerCallBookedCents.value ?? null,
+        pPipeline?.costPerCallBookedCents.value ?? null,
+      ),
+    },
+    {
+      label: "Cash per lead",
+      value: formatCents(pipeline?.cashPerLeadCents.value ?? null),
+      delta: deltaFraction(
+        pipeline?.cashPerLeadCents.value ?? null,
+        pPipeline?.cashPerLeadCents.value ?? null,
+      ),
+    },
+  ];
 
   const adSpendPoints = (marketing.data?.adSpendDaily ?? []).map((pt) => ({
     label: pt.date.slice(5),
@@ -103,12 +158,10 @@ export default async function MarketingPage({
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DeltaStatCard
           label="Ad spend · MTD"
-          value={formatCents(o?.adSpendCents.value ?? null)}
-          delta={deltaFraction(
-            o?.adSpendCents.value ?? null,
-            pO?.adSpendCents.value ?? null,
-          )}
+          value={formatCents(adSpend)}
+          delta={deltaFraction(adSpend, pO?.adSpendCents.value ?? null)}
           deltaLabel={deltaLabel}
+          pace={spendPace}
         />
         <DeltaStatCard
           label="FE sales"
@@ -183,6 +236,51 @@ export default async function MarketingPage({
           </div>
         )}
       </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-line bg-glass p-5">
+          <p className="mb-4 text-xs font-medium uppercase tracking-wide text-fg-muted">
+            Spend by channel
+          </p>
+          {channels.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Channel</TableHead>
+                  <TableHead className="text-right">Spend</TableHead>
+                  <TableHead className="text-right">CPA</TableHead>
+                  <TableHead className="text-right">ROAS</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {channels.map((ch) => (
+                  <TableRow key={ch.channel}>
+                    <TableCell className="text-fg-secondary">
+                      {ch.channel}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCents(ch.spendCents ?? null)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCents(ch.cpaCents ?? null)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {ch.roas === null || ch.roas === undefined
+                        ? "—"
+                        : `${ch.roas.toFixed(2)}×`}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex h-[160px] items-center justify-center text-sm text-fg-muted">
+              Channel-level spend populates once attribution data syncs
+            </div>
+          )}
+        </Card>
+        <MetricTable title="Unit economics" rows={unitEconomics} />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <FunnelBars

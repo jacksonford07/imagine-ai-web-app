@@ -14,7 +14,7 @@ import {
   getCeoKpis,
   type AffiliateFilter as AffiliateValue,
 } from "@/lib/sources/bot/kpis";
-import { getAscensionFunnel, getCohorts } from "@/lib/sources/bot/cohorts";
+import { getAscensionFunnel } from "@/lib/sources/bot/cohorts";
 import { getTimeToAscension } from "@/lib/sources/bot/ascensions";
 import { deltaFraction, resolveWindow, withPrior } from "@/lib/period";
 import { formatCents, formatPercent } from "@/lib/format";
@@ -28,13 +28,6 @@ function asAffiliate(
 ): AffiliateValue | undefined {
   const v = single(value);
   return v === "yes" || v === "no" || v === "both" ? v : undefined;
-}
-
-/** Mean of the available per-cohort median-days-to-ascend values, rounded. */
-function meanMedianDays(values: (number | null)[]): number | null {
-  const present = values.filter((v): v is number => v !== null);
-  if (present.length === 0) return null;
-  return Math.round(present.reduce((a, b) => a + b, 0) / present.length);
 }
 
 // Largest consecutive drop-off in the funnel, for the insight line.
@@ -72,21 +65,16 @@ export default async function AscensionsPage({
     resolveWindow(single(sp.from), single(sp.to)),
   );
 
-  const [cur, prev, funnel, cohorts, distribution] = await Promise.all([
+  const [cur, prev, funnel, distribution] = await Promise.all([
     getCeoKpis({ from: current.from, to: current.to, affiliate }),
     getCeoKpis({ from: prior.from, to: prior.to, affiliate }),
     getAscensionFunnel({ from: current.from, to: current.to }),
-    getCohorts({ from: current.from, to: current.to }),
     getTimeToAscension({ from: current.from, to: current.to }),
   ]);
 
   const be = cur.data?.beEngine;
   const pBe = prev.data?.beEngine;
   const deltaLabel = `vs ${priorLabel}`;
-
-  const medianDays = meanMedianDays(
-    (cohorts.data?.rows ?? []).map((r) => r.medianDaysToAscension ?? null),
-  );
 
   const funnelCounts: FunnelCounts | null =
     funnel.data === null
@@ -128,7 +116,12 @@ export default async function AscensionsPage({
         />
         <DeltaStatCard
           label="Median days to ascend"
-          value={medianDays === null ? "—" : `${String(medianDays)}d`}
+          value={formatMetric("days", be?.medianDaysToAscension.value ?? null)}
+          delta={deltaFraction(
+            be?.medianDaysToAscension.value ?? null,
+            pBe?.medianDaysToAscension.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
         />
         <DeltaStatCard
           label="BE customers · MTD"
@@ -145,6 +138,54 @@ export default async function AscensionsPage({
           delta={deltaFraction(
             be?.beRevenueCents.value ?? null,
             pBe?.beRevenueCents.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+        <DeltaStatCard
+          label="Mean days to ascend"
+          value={formatMetric("days", be?.meanDaysToAscension.value ?? null)}
+          delta={deltaFraction(
+            be?.meanDaysToAscension.value ?? null,
+            pBe?.meanDaysToAscension.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="Days FE → BE"
+          value={formatMetric("days", be?.daysFeToBe.value ?? null)}
+          delta={deltaFraction(
+            be?.daysFeToBe.value ?? null,
+            pBe?.daysFeToBe.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="Time to first call"
+          value={formatMetric("days", be?.timeToFirstCallDays.value ?? null)}
+          delta={deltaFraction(
+            be?.timeToFirstCallDays.value ?? null,
+            pBe?.timeToFirstCallDays.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="LTV"
+          value={formatCents(be?.ltvCents.value ?? null)}
+          delta={deltaFraction(
+            be?.ltvCents.value ?? null,
+            pBe?.ltvCents.value ?? null,
+          )}
+          deltaLabel={deltaLabel}
+        />
+        <DeltaStatCard
+          label="Payback"
+          value={formatMetric("days", be?.paybackDays.value ?? null)}
+          delta={deltaFraction(
+            be?.paybackDays.value ?? null,
+            pBe?.paybackDays.value ?? null,
           )}
           deltaLabel={deltaLabel}
         />

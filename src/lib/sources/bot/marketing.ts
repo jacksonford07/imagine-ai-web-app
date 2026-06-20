@@ -52,12 +52,29 @@ const adSpendPointSchema = z
 
 export type AdSpendPoint = z.infer<typeof adSpendPointSchema>;
 
+// Spend broken out per acquisition channel/platform (Meta, Google, …) with the
+// channel's CPA and ROAS where the bot can attribute them.
+const channelSpendSchema = z
+  .object({
+    channel: z.string(),
+    spendCents: z.number().nullish(),
+    salesCount: z.number().nullish(),
+    cpaCents: z.number().nullish(),
+    roas: z.number().nullish(),
+  })
+  .passthrough();
+
+export type ChannelSpend = z.infer<typeof channelSpendSchema>;
+
 const marketingSchema = z
   .object({
     lastSyncedAt: isoOrNull,
     split: z.array(splitRowSchema),
     fullFunnel: fullFunnelSchema.nullable(),
     adSpendDaily: z.array(adSpendPointSchema),
+    spendByChannel: z.array(channelSpendSchema),
+    /** Ad-spend budget/target for the window, for the spend-vs-target bar. */
+    budgetTargetCents: z.number().nullish(),
   })
   .passthrough();
 
@@ -65,7 +82,13 @@ export type Marketing = z.infer<typeof marketingSchema>;
 
 function normalize(raw: unknown): unknown {
   if (!isRecord(raw)) {
-    return { split: [], fullFunnel: null, adSpendDaily: [], lastSyncedAt: null };
+    return {
+      split: [],
+      fullFunnel: null,
+      adSpendDaily: [],
+      spendByChannel: [],
+      lastSyncedAt: null,
+    };
   }
   return {
     ...raw,
@@ -75,6 +98,11 @@ function normalize(raw: unknown): unknown {
       ? raw.adSpendDaily
       : Array.isArray(raw.spendSeries)
         ? raw.spendSeries
+        : [],
+    spendByChannel: Array.isArray(raw.spendByChannel)
+      ? raw.spendByChannel
+      : Array.isArray(raw.channels)
+        ? raw.channels
         : [],
   };
 }
