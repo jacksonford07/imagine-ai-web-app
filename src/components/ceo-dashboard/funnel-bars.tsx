@@ -39,9 +39,11 @@ export function FunnelBars({
             return (
               <div
                 key={stage.label}
-                className="grid grid-cols-[7.5rem_1fr_5rem_3.5rem] items-center gap-3"
+                className="grid grid-cols-[4.5rem_1fr_3.25rem] items-center gap-2 sm:grid-cols-[7.5rem_1fr_5rem_3.5rem] sm:gap-3"
               >
-                <span className="text-sm text-fg-secondary">{stage.label}</span>
+                <span className="truncate text-xs text-fg-secondary sm:text-sm">
+                  {stage.label}
+                </span>
                 <div className="h-7 overflow-hidden rounded-md bg-fill-hover">
                   {stage.value !== null && (
                     <div
@@ -55,12 +57,12 @@ export function FunnelBars({
                     />
                   )}
                 </div>
-                <span className="text-right text-sm font-medium tabular-nums text-fg-primary">
+                <span className="text-right text-xs font-medium tabular-nums text-fg-primary sm:text-sm">
                   {stage.value === null
                     ? "—"
                     : stage.value.toLocaleString("en-US")}
                 </span>
-                <span className="text-right text-xs tabular-nums text-fg-subtle">
+                <span className="hidden text-right text-xs tabular-nums text-fg-subtle sm:block">
                   {i === 0 ? "100%" : formatPercent(ofBase)}
                 </span>
               </div>

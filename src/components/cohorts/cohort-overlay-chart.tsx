@@ -69,7 +69,7 @@ export function CohortOverlayChart({
   const hiddenCount = rows.length - shown.length;
 
   return (
-    <Card className="p-5">
+    <Card className="p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Cohort overlay —{" "}
@@ -97,19 +97,21 @@ export function CohortOverlayChart({
               tickFormatter={(v) => `W${String(v)}`}
               tickLine={false}
               axisLine={false}
-              fontSize={12}
+              fontSize={11}
+              interval="preserveStartEnd"
+              minTickGap={20}
               stroke="hsl(var(--muted-foreground))"
             />
             <YAxis
               tickFormatter={(v) =>
                 metric === "revenue"
-                  ? `$${(Number(v) / 100).toLocaleString()}`
+                  ? `$${String(Math.round(Number(v) / 100000) / 10)}k`
                   : `${String(v)}%`
               }
               tickLine={false}
               axisLine={false}
-              fontSize={12}
-              width={64}
+              fontSize={11}
+              width={48}
               stroke="hsl(var(--muted-foreground))"
             />
             <Tooltip
@@ -131,9 +133,9 @@ export function CohortOverlayChart({
               labelStyle={{ color: "hsl(var(--popover-foreground))" }}
             />
             <Legend
-              wrapperStyle={{ fontSize: 12 }}
+              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
               iconType="plainline"
-              iconSize={12}
+              iconSize={10}
             />
             {shown.map((row, i) => (
               <Line

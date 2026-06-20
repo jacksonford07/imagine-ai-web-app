@@ -48,9 +48,9 @@ export function AscensionFunnelCard({
             return (
               <div
                 key={stage.key}
-                className="grid grid-cols-[8.5rem_1fr_4.5rem_4rem] items-center gap-3"
+                className="grid grid-cols-[5rem_1fr_3.5rem] items-center gap-2 sm:grid-cols-[8.5rem_1fr_4.5rem_4rem] sm:gap-3"
               >
-                <span className="text-sm text-muted-foreground">
+                <span className="truncate text-xs text-muted-foreground sm:text-sm">
                   {stage.label}
                 </span>
                 <div className="h-7 overflow-hidden rounded-md bg-fill-hover">
@@ -64,10 +64,10 @@ export function AscensionFunnelCard({
                     />
                   )}
                 </div>
-                <span className="text-right text-sm font-medium tabular-nums">
+                <span className="text-right text-xs font-medium tabular-nums sm:text-sm">
                   {count === null ? "—" : count.toLocaleString()}
                 </span>
-                <span className="text-right text-xs tabular-nums text-muted-foreground">
+                <span className="hidden text-right text-xs tabular-nums text-muted-foreground sm:block">
                   {i === 0 ? "" : formatPercent(conversion)}
                 </span>
               </div>

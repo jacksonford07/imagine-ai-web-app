@@ -65,12 +65,12 @@ export function WindowFilter(): React.ReactElement {
 
   return (
     <div
-      className="flex items-center gap-2"
+      className="flex w-full flex-wrap items-center gap-2 sm:w-auto"
       data-pending={isPending ? "" : undefined}
     >
       <Select
         aria-label="Window preset"
-        className="h-8 w-36 text-xs"
+        className="h-8 w-full text-xs sm:w-36"
         value=""
         onChange={(e) => {
           const key = e.target.value as PresetKey | "";
@@ -89,25 +89,27 @@ export function WindowFilter(): React.ReactElement {
           </option>
         ))}
       </Select>
-      <Input
-        type="date"
-        aria-label="From date"
-        className="h-8 w-36 text-xs"
-        value={from}
-        onChange={(e) => {
-          apply({ from: e.target.value });
-        }}
-      />
-      <span className="text-xs text-fg-subtle">→</span>
-      <Input
-        type="date"
-        aria-label="To date"
-        className="h-8 w-36 text-xs"
-        value={to}
-        onChange={(e) => {
-          apply({ to: e.target.value });
-        }}
-      />
+      <div className="flex w-full items-center gap-2 sm:w-auto">
+        <Input
+          type="date"
+          aria-label="From date"
+          className="h-8 min-w-0 flex-1 text-xs sm:w-36 sm:flex-none"
+          value={from}
+          onChange={(e) => {
+            apply({ from: e.target.value });
+          }}
+        />
+        <span className="text-xs text-fg-subtle">→</span>
+        <Input
+          type="date"
+          aria-label="To date"
+          className="h-8 min-w-0 flex-1 text-xs sm:w-36 sm:flex-none"
+          value={to}
+          onChange={(e) => {
+            apply({ to: e.target.value });
+          }}
+        />
+      </div>
     </div>
   );
 }
