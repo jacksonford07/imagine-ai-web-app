@@ -16,6 +16,23 @@ export function formatPercent(fraction: number | null): string {
   return `${(fraction * 100).toFixed(1)}%`;
 }
 
+/** Cents → compact "$256k" / "$1.2M". Renders "—" for null/NaN. */
+export function formatCompactCents(cents: number | null): string {
+  if (cents === null || Number.isNaN(cents)) return "—";
+  const dollars = cents / 100;
+  const abs = Math.abs(dollars);
+  if (abs >= 1_000_000) return `$${(dollars / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `$${String(Math.round(dollars / 1000))}k`;
+  return `$${String(Math.round(dollars))}`;
+}
+
+/** 0–1 fraction → signed "+9.4%" / "−3.4%". Renders "—" for null/NaN. */
+export function formatSignedPercent(fraction: number | null): string {
+  if (fraction === null || Number.isNaN(fraction)) return "—";
+  const sign = fraction > 0 ? "+" : fraction < 0 ? "−" : "";
+  return `${sign}${(Math.abs(fraction) * 100).toFixed(1)}%`;
+}
+
 export function formatDateTime(iso: string | null): string {
   if (iso === null) return "—";
   const d = new Date(iso);
